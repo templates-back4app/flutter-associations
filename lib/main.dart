@@ -6,8 +6,9 @@ import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final keyApplicationId = 'xxxxxxxxxxxxxxxxxxxxxxxx';
-  final keyClientKey = 'xxxxxxxxxxxxxxxxxxxxxxxx';
+  final keyApplicationId = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+  final keyClientKey = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
   final keyParseServerUrl = 'https://parseapi.back4app.com';
 
   await Parse().initialize(keyApplicationId, keyParseServerUrl,
@@ -260,8 +261,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   Future<List<ParseObject>> doListRegistration() async {
     QueryBuilder<ParseObject> queryRegistration =
-        QueryBuilder<ParseObject>(ParseObject(registrationType.className))
-          ..orderByAscending('name');
+        QueryBuilder<ParseObject>(ParseObject(registrationType.className));
     final ParseResponse apiResponse = await queryRegistration.query();
 
     if (apiResponse.success && apiResponse.results != null) {
@@ -285,6 +285,7 @@ class BookPage extends StatefulWidget {
 
 class _BookPageState extends State<BookPage> {
   final controllerTitle = TextEditingController();
+  final controllerYear = TextEditingController();
   ParseObject genre;
   ParseObject publisher;
   List<ParseObject> authors;
@@ -304,6 +305,17 @@ class _BookPageState extends State<BookPage> {
               controller: controllerTitle,
               decoration: InputDecoration(
                   labelText: 'Title', border: OutlineInputBorder()),
+            ),
+            SizedBox(
+              height: 16,
+            ),
+            TextField(
+              autocorrect: false,
+              keyboardType: TextInputType.number,
+              controller: controllerYear,
+              maxLength: 4,
+              decoration: InputDecoration(
+                  labelText: 'Year', border: OutlineInputBorder()),
             ),
             SizedBox(
               height: 16,
@@ -376,6 +388,22 @@ class _BookPageState extends State<BookPage> {
                       ..showSnackBar(SnackBar(
                         content: Text(
                           'Empty Book Title',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                        duration: Duration(seconds: 3),
+                        backgroundColor: Colors.blue,
+                      ));
+                    return;
+                  }
+
+                  if (controllerYear.text.trim().length != 4) {
+                    ScaffoldMessenger.of(context)
+                      ..removeCurrentSnackBar()
+                      ..showSnackBar(SnackBar(
+                        content: Text(
+                          'Invalid Year',
                           style: TextStyle(
                             color: Colors.white,
                           ),
@@ -518,8 +546,7 @@ class _CheckBoxGroupWidgetState extends State<CheckBoxGroupWidget> {
   Future<List<ParseObject>> doListRegistration(
       RegistrationType registrationType) async {
     QueryBuilder<ParseObject> queryRegistration =
-        QueryBuilder<ParseObject>(ParseObject(registrationType.className))
-          ..orderByAscending('name');
+        QueryBuilder<ParseObject>(ParseObject(registrationType.className));
     final ParseResponse apiResponse = await queryRegistration.query();
 
     if (apiResponse.success && apiResponse.results != null) {
@@ -605,8 +632,7 @@ class _BookListPageState extends State<BookListPage> {
 
   Future<List<ParseObject>> getPublisherList() async {
     QueryBuilder<ParseObject> queryPublisher =
-        QueryBuilder<ParseObject>(ParseObject('Publisher'))
-          ..orderByAscending('name');
+        QueryBuilder<ParseObject>(ParseObject('Publisher'));
     final ParseResponse apiResponse = await queryPublisher.query();
 
     if (apiResponse.success && apiResponse.results != null) {
@@ -703,12 +729,15 @@ class BookDetailPage extends StatefulWidget {
 class _BookDetailPageState extends State<BookDetailPage> {
   ParseObject get book => widget.book;
 
+  bool loadedData = false;
+  bool isLoading = true;
+
   String bookTitle;
+  int bookYear;
   String bookGenre;
   String bookPublisher;
   List<String> bookAuthors;
 
-  bool isLoading = true;
   @override
   void initState() {
     super.initState();
@@ -741,10 +770,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
       );
     }
 
-    if (bookTitle == null ||
-        bookGenre == null ||
-        bookPublisher == null ||
-        bookAuthors == null) {
+    if (!loadedData) {
       return Center(
           child: Text(
         'Error retrieving data ...',
@@ -756,6 +782,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Title: $bookTitle'),
+        SizedBox(
+          height: 8,
+        ),
+        Text('Year: $bookYear'),
         SizedBox(
           height: 8,
         ),
