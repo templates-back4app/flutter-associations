@@ -489,7 +489,24 @@ class _BookPageState extends State<BookPage> {
     );
   }
 
-  Future<void> doSaveBook() async {}
+  Future<void> doSaveBook() async {
+    final book = ParseObject('Book')
+      ..set('title', controllerTitle.text.trim())
+      ..set('year', int.parse(controllerYear.text.trim()))
+      //the objectId will be converted to a Pointer on the save() method
+      ..set('genre', ParseObject('Genre')..objectId = genre.objectId)
+      //you can also convert to a Pointer object before the saving using the .toPointer() method
+      ..set('publisher',
+          (ParseObject('Publisher')..objectId = publisher.objectId).toPointer())
+      //Saving a List of Authors for the Book
+      ..addRelation(
+          'authors',
+          authors
+              .map((o) => ParseObject('Author')..objectId = o.objectId)
+              .toList());
+
+    await book.save();
+  }
 }
 
 class CheckBoxGroupWidget extends StatefulWidget {
@@ -712,7 +729,18 @@ class _BookTileState extends State<BookTile> {
   }
 
   Future<List<ParseObject>> getBookList(String publisherId) async {
-    return [];
+    QueryBuilder<ParseObject> queryBook =
+        QueryBuilder<ParseObject>(ParseObject('Book'))
+          ..whereEqualTo('publisher',
+              (ParseObject('Publisher')..objectId = publisherId).toPointer())
+          ..orderByAscending('title');
+    final ParseResponse apiResponse = await queryBook.query();
+
+    if (apiResponse.success && apiResponse.results != null) {
+      return apiResponse.results;
+    } else {
+      return [];
+    }
   }
 }
 
@@ -808,5 +836,33 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 
-  Future getBookDetail(ParseObject book) async {}
+  Future getBookDetail(ParseObject book) async {
+    QueryBuilder<ParseObject> queryBook =
+        QueryBuilder<ParseObject>(ParseObject('Book'))
+          ..whereEqualTo('objectId', book.objectId)
+          ..includeObject(['publisher', 'genre']);
+
+    final ParseResponse responseBook = await queryBook.query();
+
+    if (responseBook.success && responseBook.results != null) {
+      final book = (responseBook.results.first) as ParseObject;
+      bookTitle = book.get<String>('title');
+      bookYear = book.get<int>('year');
+      bookGenre = book.get<ParseObject>('genre').get<String>('name');
+      bookPublisher = book.get<ParseObject>('publisher').get<String>('name');
+      loadedData = true;
+    }
+
+    QueryBuilder<ParseObject> queryAuthors =
+        QueryBuilder<ParseObject>(ParseObject('Author'))
+          ..whereRelatedTo('authors', 'Book', book.objectId);
+
+    final ParseResponse responseAuthors = await queryAuthors.query();
+
+    if (responseAuthors.success && responseAuthors.results != null) {
+      bookAuthors = responseAuthors.results
+          .map((e) => (e as ParseObject).get<String>('name'))
+          .toList();
+    }
+  }
 }
