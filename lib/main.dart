@@ -712,18 +712,7 @@ class _BookTileState extends State<BookTile> {
   }
 
   Future<List<ParseObject>> getBookList(String publisherId) async {
-    QueryBuilder<ParseObject> queryBook =
-        QueryBuilder<ParseObject>(ParseObject('Book'))
-          ..whereEqualTo('publisher',
-              (ParseObject('Publisher')..objectId = publisherId).toPointer())
-          ..orderByAscending('title');
-    final ParseResponse apiResponse = await queryBook.query();
-
-    if (apiResponse.success && apiResponse.results != null) {
-      return apiResponse.results;
-    } else {
-      return [];
-    }
+    return [];
   }
 }
 
